@@ -58,7 +58,6 @@ def format_code(code: str) -> str:
     """
     lines = code.split('\n')
     
-    # Remove excessive blank lines
     formatted_lines = []
     prev_blank = False
     
