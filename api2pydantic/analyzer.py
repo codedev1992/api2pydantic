@@ -173,12 +173,12 @@ def _analyze_list(field_info: FieldInfo, values: list) -> None:
     
     if not values:
         # Empty list - default to List[Any]
-        field_info.array_item_schema = {"type": "Any"}
+        field_info.array_item_schema = {"types": ["Any"], "is_nullable": False}
         return
     
     # Analyze all items to determine common type
     item_schemas = []
-    for item in values[:50]:  # Limit analysis to first 50 items
+    for item in values[:100]:  # Analyze up to 100 items for better inference
         item_schema = _analyze_value(item, "item")
         item_schemas.append(item_schema)
     
@@ -207,12 +207,13 @@ def _merge_schemas(schemas: List[Dict]) -> Dict:
     """Merge multiple schemas to find common type."""
     
     if not schemas:
-        return {"type": "Any"}
+        return {"types": ["Any"], "is_nullable": False}
     
     # Collect all types from schemas
     all_types = set()
     is_nullable = False
     nested_schemas = []
+    all_examples = []
     
     for schema in schemas:
         types = schema.get("types", [])
@@ -221,6 +222,8 @@ def _merge_schemas(schemas: List[Dict]) -> Dict:
             is_nullable = True
         if schema.get("nested_schema"):
             nested_schemas.append(schema["nested_schema"])
+        if schema.get("examples"):
+            all_examples.extend(schema.get("examples", [])[:1])  # Keep first example from each
     
     # Remove None from types
     all_types.discard("None")
@@ -228,19 +231,28 @@ def _merge_schemas(schemas: List[Dict]) -> Dict:
     # If only one type, use it
     if len(all_types) == 1:
         merged_type = list(all_types)[0]
-        result = {"type": merged_type, "is_nullable": is_nullable}
+        result = {"types": [merged_type], "is_nullable": is_nullable}
         
         # If it's a nested dict, merge nested schemas
         if merged_type == "Dict" and nested_schemas:
             result["nested_schema"] = _merge_nested_schemas(nested_schemas)
         
+        # Add examples
+        if all_examples:
+            result["examples"] = all_examples[:3]
+        
         return result
     
-    # Multiple types - use Union
-    return {
-        "type": f"Union[{', '.join(sorted(all_types))}]",
+    # Multiple types - return as list
+    result = {
+        "types": list(all_types),
         "is_nullable": is_nullable
     }
+    
+    if all_examples:
+        result["examples"] = all_examples[:3]
+    
+    return result
 
 
 def _merge_nested_schemas(nested_schemas: List[Dict]) -> Dict:
