@@ -34,7 +34,7 @@ def main(
     
         api2pydantic https://api.example.com/users
         
-        api2pydantic curl https://api.example.com/users -H "Authorization: Bearer token"
+        api2pydantic 'curl https://api.example.com/users -H "Authorization: Bearer token"'
         
         api2pydantic file data.json
         

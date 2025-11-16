@@ -27,8 +27,19 @@ class PydanticModelGenerator:
         self.imports = {"from pydantic import BaseModel, Field"}
         self.nested_models = []
         
-        # Generate the main model
-        main_model = self._generate_model(schema, model_name)
+        # Check if root is an array - handle specially
+        if "List" in schema.get("types", []) and "array_item_schema" in schema:
+            # This is a root-level array
+            # Generate the item model first
+            item_schema = schema["array_item_schema"]
+            item_model_code = self._generate_model(item_schema, "Item", is_nested=True)
+            self.nested_models.insert(0, item_model_code)
+            
+            # Generate a root model that wraps the list
+            main_model = self._generate_array_root_model(model_name)
+        else:
+            # Generate the main model normally
+            main_model = self._generate_model(schema, model_name)
         
         # Build the complete code
         code_parts = []
@@ -36,10 +47,12 @@ class PydanticModelGenerator:
         # Add imports
         code_parts.append(self._generate_imports())
         code_parts.append("")
+        code_parts.append("")
         
         # Add nested models first
         for nested_model in self.nested_models:
             code_parts.append(nested_model)
+            code_parts.append("")
             code_parts.append("")
         
         # Add main model
@@ -74,6 +87,18 @@ class PydanticModelGenerator:
         else:
             # Empty model
             lines.append("    pass")
+        
+        return "\n".join(lines)
+    
+    def _generate_array_root_model(self, model_name: str) -> str:
+        """Generate a root model that contains a list of items."""
+        
+        lines = []
+        lines.append(f"class {model_name}(BaseModel):")
+        lines.append(f'    """{model_name} - List of Item objects"""')
+        
+        self.imports.add("from typing import List")
+        lines.append(f"    __root__: List[Item]")
         
         return "\n".join(lines)
     
@@ -125,6 +150,7 @@ class PydanticModelGenerator:
         types = field_schema.get("types", [])
         
         if not types:
+            self.imports.add("from typing import Any")
             return "Any"
         
         # Handle single type
@@ -179,11 +205,13 @@ class PydanticModelGenerator:
         array_item_schema = field_schema.get("array_item_schema")
         
         if not array_item_schema:
+            self.imports.add("from typing import Any")
             return "Any"
         
         item_types = array_item_schema.get("types", [])
         
         if not item_types:
+            self.imports.add("from typing import Any")
             return "Any"
         
         # Single type
@@ -196,6 +224,23 @@ class PydanticModelGenerator:
                 nested_model_code = self._generate_model(array_item_schema, nested_model_name, is_nested=True)
                 self.nested_models.append(nested_model_code)
                 return nested_model_name
+            
+            # Handle special types in array
+            if type_name == "UUID":
+                self.imports.add("from uuid import UUID")
+                return "UUID"
+            
+            if type_name == "datetime":
+                self.imports.add("from datetime import datetime")
+                return "datetime"
+            
+            if type_name == "EmailStr":
+                self.imports.add("from pydantic import EmailStr")
+                return "EmailStr"
+            
+            if type_name == "HttpUrl":
+                self.imports.add("from pydantic import HttpUrl")
+                return "HttpUrl"
             
             return type_name
         
