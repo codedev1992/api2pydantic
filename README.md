@@ -2,6 +2,9 @@
 
 🚀 Automatically generate Pydantic models from API responses, JSON files, or curl commands.
 
+[![PyPI version](https://badge.fury.io/py/api2pydantic.svg)](https://badge.fury.io/py/api2pydantic)
+[![Downloads](https://pepy.tech/badge/api2pydantic)](https://pepy.tech/project/api2pydantic)
+
 ## Features
 
 ✨ **Smart Type Inference** - Automatically detects correct Python types from sample data  
