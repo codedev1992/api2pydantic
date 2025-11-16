@@ -33,6 +33,11 @@ pip install -e .
 api2pydantic https://api.example.com/users
 ```
 
+### using Piple
+```bash 
+curl https://api.example.com/users | api2pydantic
+```
+
 ### From curl command
 ```bash
 api2pydantic curl https://api.example.com/users -H "Authorization: Bearer token"
