@@ -15,14 +15,10 @@ from api2pydantic.analyzer import (
 
 def test_analyze_simple_object():
     """Test analyzing a simple JSON object."""
-    json_data = {
-        "name": "John Doe",
-        "age": 30,
-        "is_active": True
-    }
-    
+    json_data = {"name": "John Doe", "age": 30, "is_active": True}
+
     schema = analyze_json(json_data)
-    
+
     assert "nested_schema" in schema
     assert "name" in schema["nested_schema"]
     assert "age" in schema["nested_schema"]
@@ -31,17 +27,10 @@ def test_analyze_simple_object():
 
 def test_analyze_nested_object():
     """Test analyzing nested JSON objects."""
-    json_data = {
-        "user": {
-            "name": "John",
-            "profile": {
-                "bio": "Developer"
-            }
-        }
-    }
-    
+    json_data = {"user": {"name": "John", "profile": {"bio": "Developer"}}}
+
     schema = analyze_json(json_data)
-    
+
     assert "nested_schema" in schema
     assert "user" in schema["nested_schema"]
     user_schema = schema["nested_schema"]["user"]
@@ -50,12 +39,10 @@ def test_analyze_nested_object():
 
 def test_analyze_array():
     """Test analyzing arrays."""
-    json_data = {
-        "tags": ["python", "pydantic", "api"]
-    }
-    
+    json_data = {"tags": ["python", "pydantic", "api"]}
+
     schema = analyze_json(json_data)
-    
+
     assert "nested_schema" in schema
     assert "tags" in schema["nested_schema"]
     tags_schema = schema["nested_schema"]["tags"]
@@ -102,26 +89,20 @@ def test_string_type_detection():
 
 def test_nullable_fields():
     """Test detection of nullable fields."""
-    json_data = {
-        "optional_field": None,
-        "required_field": "value"
-    }
-    
+    json_data = {"optional_field": None, "required_field": "value"}
+
     schema = analyze_json(json_data)
-    
+
     assert schema["nested_schema"]["optional_field"]["is_nullable"]
     assert not schema["nested_schema"]["required_field"].get("is_nullable", False)
 
 
 def test_numeric_constraints():
     """Test numeric constraint detection."""
-    json_data = {
-        "age": 30,
-        "score": 95.5
-    }
-    
+    json_data = {"age": 30, "score": 95.5}
+
     schema = analyze_json(json_data)
-    
+
     age_schema = schema["nested_schema"]["age"]
     assert "int" in age_schema["types"]
     assert "min_value" in age_schema
@@ -130,13 +111,10 @@ def test_numeric_constraints():
 
 def test_string_length_constraints():
     """Test string length constraint detection."""
-    json_data = {
-        "short": "hi",
-        "long": "this is a longer string"
-    }
-    
+    json_data = {"short": "hi", "long": "this is a longer string"}
+
     schema = analyze_json(json_data)
-    
+
     short_schema = schema["nested_schema"]["short"]
     assert "min_length" in short_schema
     assert short_schema["min_length"] == 2
@@ -144,24 +122,20 @@ def test_string_length_constraints():
 
 def test_empty_array():
     """Test handling of empty arrays."""
-    json_data = {
-        "empty": []
-    }
-    
+    json_data = {"empty": []}
+
     schema = analyze_json(json_data)
-    
+
     empty_schema = schema["nested_schema"]["empty"]
     assert "List" in empty_schema["types"]
 
 
 def test_mixed_type_array():
     """Test handling of arrays with mixed types."""
-    json_data = {
-        "mixed": [1, "string", True]
-    }
-    
+    json_data = {"mixed": [1, "string", True]}
+
     schema = analyze_json(json_data)
-    
+
     mixed_schema = schema["nested_schema"]["mixed"]
     assert "List" in mixed_schema["types"]
 
